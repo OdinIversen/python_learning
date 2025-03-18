@@ -6,39 +6,41 @@ A collection of Python modules and utilities demonstrating best practices in Pyt
 
 ### coding_habits.py
 Contains practical examples of Python best practices, including:
-- Data types and their properties
+- Data types and their properties (immutable vs mutable, usage examples)
 - String formatting with f-strings
 - Path manipulation with pathlib
 - File operations
 - Exception handling
-- Comprehensions (list, dict, set)
-- Type checking
-- Iteration techniques
-- Performance timing
+- Using default parameters safely
+- Comprehensions (list, dict, set, generator)
+- Type checking with isinstance
+- Comparing singletons (None, True, False)
+- Advanced iteration techniques (enumerate, zip, reversed)
+- Performance timing with time.perf_counter()
+- Logical operators (and, or) behavior
 - Named tuples and dataclasses
 
 ### logger.py
 A custom JSON logging implementation with:
-- Custom JSON formatter
-- Log filtering
-- Structured logging support
+- Custom JSON formatter (MyJSONFormatter)
+- Log filtering (NonErrorFilter)
+- Structured logging support with proper formatting
+- Built-in attribute handling
+
+### logging_config.json
+Configuration for the logging system:
+- Multiple formatters (simple text and JSON)
+- Different handlers (stderr, rotating file)
+- Queue-based async logging
+- Log level settings
 
 ### main.py
 Example application demonstrating the logging system:
 - Configuration loading from JSON
-- Multiple log levels
-- Exception logging
+- Multiple log levels (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+- Exception logging with traceback
 - Queue-based logging with listener
-
-### plagiarism_detector/
-A comprehensive tool for checking similarities between text documents and detecting potential plagiarism:
-- Multiple similarity metrics (Cosine, Jaccard, Sequence, N-gram)
-- Interactive HTML reports with color-coded similarity highlighting
-- Paragraph-by-paragraph comparison
-- Sentence-level analysis
-- Shared phrase detection
-- Similarity heatmap visualization
-- Support for multiple file formats (TXT, PDF, DOCX, LaTeX)
+- Proper cleanup using atexit
 
 ## Setup
 
@@ -64,73 +66,24 @@ pip install -r requirements.txt
 python main.py
 ```
 
-## Logging Configuration
+## Logging System
 
 The logging system is configured via `logging_config.json` which defines:
-- Multiple formatters (simple text and JSON)
-- Different handlers (console, file)
-- Queue-based async logging
+- Formatters: simple text and a custom JSON formatter
+- Handlers: stderr (for warnings and above) and rotating file handler
+- Queue-based async logging for thread safety
 
-Log files are stored in the `logs/` directory in JSON Lines format.
+Log files are stored in the `logs/` directory in JSON Lines format (.jsonl).
 
-## Using the Plagiarism Detector
+Each log entry contains:
+- Level (DEBUG, INFO, etc.)
+- Message content
+- Timestamp (ISO format with timezone)
+- Logger name
+- Module, function, and line number
+- Thread information
 
-The plagiarism detector can be used to compare two documents and assess their similarity.
-
-### Command Line Interface
-
-```bash
-python plagiarism_cli.py file1.txt file2.txt [options]
-```
-
-#### Options:
-- `--title1 "Title 1"`: Set a custom title for the first document
-- `--title2 "Title 2"`: Set a custom title for the second document
-- `--threshold 0.7`: Set similarity threshold (0.0 to 1.0)
-- `--output-dir "results"`: Specify output directory
-- `--formats html json text summary chart heatmap gauge`: Choose output format(s)
-- `--verbose`: Enable detailed output
-
-### Example Usage
-
-Basic comparison of two text files:
-```bash
-python plagiarism_cli.py document1.txt document2.txt
-```
-
-Comparing a thesis with a published paper:
-```bash
-python plagiarism_cli.py thesis.pdf paper.pdf --title1 "My Thesis" --title2 "Journal Paper" --formats all
-```
-
-Comparing with lower similarity threshold:
-```bash
-python plagiarism_cli.py file1.docx file2.docx --threshold 0.5
-```
-
-### Python API
-
-You can also use the detector in your own Python scripts:
-
-```python
-from plagiarism_detector import PlagiarismDetector
-
-# Initialize detector
-detector = PlagiarismDetector(threshold=0.7)
-
-# Analyze documents
-result = detector.analyze("document1.txt", "document2.txt")
-
-# Access similarity metrics
-similarity = result["comparison"]["similarity_metrics"]["combined_similarity"]
-print(f"Overall similarity: {similarity:.2f}")
-
-# Get paths to generated reports
-html_report = result["reports"]["html"]
-print(f"HTML report generated: {html_report}")
-```
-
-## File Structure
+## Project Structure
 
 ```
 python_learning/
@@ -138,27 +91,15 @@ python_learning/
 ├── coding_habits.py         # Python best practices examples
 ├── logger.py                # Custom JSON logging implementation
 ├── logging_config.json      # Logging configuration
-├── main.py                  # Example application
-├── plagiarism_cli.py        # Command-line interface for plagiarism detector
-│
-├── plagiarism_detector/     # Plagiarism detection package
-│   ├── __init__.py          # Package initialization
-│   ├── detector.py          # Core plagiarism detection functionality
-│   ├── text_processor.py    # Text processing utilities
-│   ├── visualizer.py        # Visualization tools
-│   ├── report_generator.py  # Report generation utilities
-│   └── file_handler.py      # File loading/saving utilities
+├── main.py                  # Example application with logging demo
 │
 ├── logs/                    # Log file directory
 │   └── logger.log.jsonl     # JSON Line formatted logs
 │
 ├── personal_files/          # Directory for personal files (contents ignored by Git)
-│   ├── .gitkeep             # Empty file to maintain directory structure
-│   ├── document1.txt        # Sample document for plagiarism detection (not in Git)
-│   ├── document2.txt        # Sample document for plagiarism detection (not in Git)
-│   └── plagiarism_results/  # Results from plagiarism detection (not in Git)
+│   └── .gitkeep             # Empty file to maintain directory structure
 │
-├── requirements.txt         # Project dependencies
+├── requirements.txt         # Project dependencies (not yet created)
 ├── .gitignore               # Git ignore patterns
 └── README.md                # Project documentation
 ```
@@ -170,10 +111,20 @@ You can use this directory to store:
 - Personal notes
 - Configuration files with credentials
 - Local development settings
-- Test documents for plagiarism detection
+- Test data and examples
 - Any other files that shouldn't be committed to version control
 
 The directory structure itself is maintained in Git using a `.gitkeep` placeholder file.
+
+## Future Improvements
+
+Potential areas for expansion:
+- Add more advanced Python patterns and techniques
+- Create unit tests for modules
+- Add a CLI interface
+- Implement async/await examples
+- Add type checking with mypy
+- Create example of packaging Python code
 
 ## Contributing
 
