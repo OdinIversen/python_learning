@@ -63,19 +63,23 @@ Log files are stored in the `logs/` directory in JSON Lines format.
 ```
 python_learning/
 │
-├── coding_habits.py      # Python best practices examples
-├── logger.py             # Custom JSON logging implementation
-├── logging_config.json   # Logging configuration
-├── main.py               # Example application
+├── coding_habits.py         # Python best practices examples
+├── logger.py                # Custom JSON logging implementation
+├── logging_config.json      # Logging configuration
+├── main.py                  # Example application
+├── plagiarism_detector.py   # Tool for comparing text documents
 │
-├── logs/                 # Log file directory
-│   └── logger.log.jsonl  # JSON Line formatted logs
+├── logs/                    # Log file directory
+│   └── logger.log.jsonl     # JSON Line formatted logs
 │
-├── personal_files/       # Directory for personal files (contents ignored by Git)
-│   └── .gitkeep          # Empty file to maintain directory structure
+├── personal_files/          # Directory for personal files (contents ignored by Git)
+│   ├── .gitkeep             # Empty file to maintain directory structure
+│   ├── document1.txt        # Sample document for plagiarism detection (not in Git)
+│   ├── document2.txt        # Sample document for plagiarism detection (not in Git)
+│   └── plagiarism_results/  # Results from plagiarism detection (not in Git)
 │
-├── .gitignore            # Git ignore patterns
-└── README.md             # Project documentation
+├── .gitignore               # Git ignore patterns
+└── README.md                # Project documentation
 ```
 
 ## Personal Files
