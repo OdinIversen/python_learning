@@ -49,3 +49,7 @@ Thumbs.db
 # Project specific
 .pytest_cache/
 .mypy_cache/
+
+# Personal files directory - ignore contents but keep directory structure
+personal_files/*
+!personal_files/.gitkeep

@@ -58,6 +58,37 @@ The logging system is configured via `logging_config.json` which defines:
 
 Log files are stored in the `logs/` directory in JSON Lines format.
 
+## File Structure
+
+```
+python_learning/
+│
+├── coding_habits.py      # Python best practices examples
+├── logger.py             # Custom JSON logging implementation
+├── logging_config.json   # Logging configuration
+├── main.py               # Example application
+│
+├── logs/                 # Log file directory
+│   └── logger.log.jsonl  # JSON Line formatted logs
+│
+├── personal_files/       # Directory for personal files (contents ignored by Git)
+│   └── .gitkeep          # Empty file to maintain directory structure
+│
+├── .gitignore            # Git ignore patterns
+└── README.md             # Project documentation
+```
+
+## Personal Files
+
+The repository includes a `personal_files/` directory whose structure is tracked by Git, but contents are ignored (via .gitignore). 
+You can use this directory to store:
+- Personal notes
+- Configuration files with credentials
+- Local development settings
+- Any other files that shouldn't be committed to version control
+
+The directory structure itself is maintained in Git using a `.gitkeep` placeholder file.
+
 ## Contributing
 
 Feel free to add more examples of Python best practices or improvements to the existing code.
