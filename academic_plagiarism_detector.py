@@ -9,7 +9,6 @@ from dataclasses import dataclass
 class TextComparison:
     """Data class to store text comparison results."""
     similarity_ratio: float
-    similarity_by_paragraph: List[float]
     html_diff: str
 
 def split_into_paragraphs(text: str) -> List[str]:
@@ -58,11 +57,52 @@ def calculate_similarity(text1: str, text2: str) -> float:
     sequence_matcher = difflib.SequenceMatcher(None, text1, text2)
     return sequence_matcher.ratio()
 
-def generate_html_diff(text1: str, text2: str, filename1: str, filename2: str, 
-                       para_similarities: Optional[List[float]] = None) -> str:
+def tokenize_text(text: str) -> List[str]:
     """
-    Generate HTML showing differences between two texts with highlights.
-    Copied text will be highlighted in yellow.
+    Tokenize text into words and punctuation for more precise diffing.
+    Preserves whitespace as separate tokens to maintain formatting.
+    """
+    # This pattern separates words, punctuation, and whitespace
+    pattern = r'(\s+|[^\w\s]+|\w+)'
+    return re.findall(pattern, text)
+
+def highlight_differences(tokens1: List[str], tokens2: List[str]) -> Tuple[str, str]:
+    """
+    Compare two lists of tokens and return HTML with differences highlighted.
+    """
+    matcher = difflib.SequenceMatcher(None, tokens1, tokens2)
+    
+    # Create HTML for both texts with highlighted differences
+    html1 = []
+    html2 = []
+    
+    for op, i1, i2, j1, j2 in matcher.get_opcodes():
+        if op == 'equal':
+            # Same text in both documents
+            segment1 = ''.join(tokens1[i1:i2])
+            segment2 = ''.join(tokens2[j1:j2])
+            html1.append(f'<span class="identical">{segment1}</span>')
+            html2.append(f'<span class="identical">{segment2}</span>')
+        elif op == 'delete':
+            # Text only in document 1
+            segment = ''.join(tokens1[i1:i2])
+            html1.append(f'<span class="deleted">{segment}</span>')
+        elif op == 'insert':
+            # Text only in document 2
+            segment = ''.join(tokens2[j1:j2])
+            html2.append(f'<span class="inserted">{segment}</span>')
+        elif op == 'replace':
+            # Different text in both documents
+            segment1 = ''.join(tokens1[i1:i2])
+            segment2 = ''.join(tokens2[j1:j2])
+            html1.append(f'<span class="changed">{segment1}</span>')
+            html2.append(f'<span class="changed">{segment2}</span>')
+    
+    return ''.join(html1), ''.join(html2)
+
+def generate_html_diff(text1: str, text2: str, filename1: str, filename2: str) -> str:
+    """
+    Generate HTML showing differences between two texts with word-level highlights.
     """
     # Split texts into paragraphs for better comparison
     paragraphs1 = split_into_paragraphs(text1)
@@ -116,28 +156,56 @@ def generate_html_diff(text1: str, text2: str, filename1: str, filename2: str,
             margin-bottom: 20px;
             font-size: 16px;
         }
-        .similar-high {
-            background-color: #FFFF77;
+        .deleted {
+            background-color: #FF9E9E;
+            text-decoration: line-through;
         }
-        .similar-medium {
-            background-color: #FFFFBB;
+        .inserted {
+            background-color: #A1FFA1;
         }
-        .similar-low {
-            background-color: #FFFFEE;
+        .changed {
+            background-color: #FFEE75;
         }
-        .para-similarity {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 5px;
+        .identical {
+            background-color: #E0E0FF;
         }
-        .highlight {
-            background-color: #FFFF77;
-            padding: 1px 0;
-        }
-        .diff-html {
+        .color-legend {
             margin-top: 40px;
-            border-top: 2px solid #ddd;
-            padding-top: 20px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f8f8f8;
+        }
+        .color-legend h2 {
+            margin-top: 0;
+        }
+        .color-legend ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .color-legend li {
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+        }
+        .legend-box {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #aaa;
+        }
+        .legend-box.identical {
+            background-color: #E0E0FF;
+        }
+        .legend-box.deleted {
+            background-color: #FF9E9E;
+        }
+        .legend-box.inserted {
+            background-color: #A1FFA1;
+        }
+        .legend-box.changed {
+            background-color: #FFEE75;
         }
         .latex-command {
             color: #0066cc;
@@ -156,90 +224,80 @@ def generate_html_diff(text1: str, text2: str, filename1: str, filename2: str,
     )
     html += f'<div class="similarity">Overall similarity: {overall_similarity:.2%}</div>'
 
-    # Add side-by-side comparison
+    # Add side-by-side comparison with word-level highlighting
     html += '<div class="container">'
+    
+    # Create lists to store the HTML for each paragraph
+    doc1_paragraphs_html = []
+    doc2_paragraphs_html = []
+    
+    # Find matching paragraphs and highlight differences
+    max_paragraphs = max(len(paragraphs1), len(paragraphs2))
+    
+    for i in range(max_paragraphs):
+        if i < len(paragraphs1) and i < len(paragraphs2):
+            # Both documents have a paragraph at this position
+            para1 = paragraphs1[i]
+            para2 = paragraphs2[i]
+            
+            # Tokenize paragraphs for word-level diff
+            tokens1 = tokenize_text(para1)
+            tokens2 = tokenize_text(para2)
+            
+            # Get highlighted versions
+            highlighted1, highlighted2 = highlight_differences(tokens1, tokens2)
+            
+            doc1_paragraphs_html.append(f'<div class="paragraph">{highlighted1}</div>')
+            doc2_paragraphs_html.append(f'<div class="paragraph">{highlighted2}</div>')
+        elif i < len(paragraphs1):
+            # Only document 1 has a paragraph at this position
+            para1 = paragraphs1[i]
+            doc1_paragraphs_html.append(f'<div class="paragraph"><span class="deleted">{para1}</span></div>')
+            doc2_paragraphs_html.append(f'<div class="paragraph"></div>')
+        else:
+            # Only document 2 has a paragraph at this position
+            para2 = paragraphs2[i]
+            doc1_paragraphs_html.append(f'<div class="paragraph"></div>')
+            doc2_paragraphs_html.append(f'<div class="paragraph"><span class="inserted">{para2}</span></div>')
     
     # Document 1 column
     html += f'<div class="column"><div class="document-title">Document 1: {filename1}</div>'
-    for i, para in enumerate(paragraphs1):
-        similarity_class = ""
-        similarity_info = ""
-        
-        if para_similarities and i < len(para_similarities):
-            sim = para_similarities[i]
-            similarity_info = f'<div class="para-similarity">Similarity: {sim:.2%}</div>'
-            
-            if sim > 0.8:
-                similarity_class = "similar-high"
-            elif sim > 0.5:
-                similarity_class = "similar-medium"
-            elif sim > 0.3:
-                similarity_class = "similar-low"
-        
-        html += f'<div class="paragraph {similarity_class}">{similarity_info}{para}</div>'
-    
+    html += ''.join(doc1_paragraphs_html)
     html += '</div>'
     
     # Document 2 column
     html += f'<div class="column"><div class="document-title">Document 2: {filename2}</div>'
-    for para in paragraphs2:
-        html += f'<div class="paragraph">{para}</div>'
+    html += ''.join(doc2_paragraphs_html)
     html += '</div></div>'
     
-    # Add detailed diff view
-    html += '<div class="diff-html"><h2>Detailed Line-by-Line Comparison</h2>'
-    diff_generator = difflib.HtmlDiff(tabsize=4)
-    diff_html = diff_generator.make_file(
-        text1.splitlines(),
-        text2.splitlines(),
-        filename1,
-        filename2,
-        context=True
-    )
-    
-    # Extract just the table part of the diff
-    table_match = re.search(r'<table class="diff".*?</table>', diff_html, re.DOTALL)
-    if table_match:
-        html += table_match.group(0)
-    else:
-        html += diff_html
+    # Add legend for color meanings
+    html += '''
+    <div class="color-legend">
+        <h2>Color Legend</h2>
+        <ul>
+            <li><span class="legend-box identical"></span> <strong>Identical text</strong> - Text that appears in both documents</li>
+            <li><span class="legend-box deleted"></span> <strong>Deleted text</strong> - Text that only appears in Document 1</li>
+            <li><span class="legend-box inserted"></span> <strong>Added text</strong> - Text that only appears in Document 2</li>
+            <li><span class="legend-box changed"></span> <strong>Modified text</strong> - Text that appears in both documents but with differences</li>
+        </ul>
+    </div>'''
     
     html += '</div></body></html>'
     
     return html
 
 def compare_academic_texts(text1: str, text2: str, filename1: str, filename2: str) -> TextComparison:
-    """Compare two academic texts and generate detailed comparison results."""
-    # Split into paragraphs
-    paragraphs1 = split_into_paragraphs(text1)
-    paragraphs2 = split_into_paragraphs(text2)
-    
+    """Compare two academic texts and generate detailed comparison results with word-level highlighting."""
     # Calculate overall similarity
     normalized_text1 = normalize_academic_text(text1)
     normalized_text2 = normalize_academic_text(text2)
     overall_similarity = calculate_similarity(normalized_text1, normalized_text2)
     
-    # Calculate paragraph-level similarities
-    para_similarities = []
-    
-    for para1 in paragraphs1:
-        # Find best matching paragraph
-        normalized_para1 = normalize_academic_text(para1)
-        max_similarity = 0
-        
-        for para2 in paragraphs2:
-            normalized_para2 = normalize_academic_text(para2)
-            similarity = calculate_similarity(normalized_para1, normalized_para2)
-            max_similarity = max(max_similarity, similarity)
-        
-        para_similarities.append(max_similarity)
-    
-    # Generate HTML diff
-    html_diff = generate_html_diff(text1, text2, filename1, filename2, para_similarities)
+    # Generate HTML diff with word-level highlighting
+    html_diff = generate_html_diff(text1, text2, filename1, filename2)
     
     return TextComparison(
         similarity_ratio=overall_similarity,
-        similarity_by_paragraph=para_similarities,
         html_diff=html_diff
     )
 
@@ -254,7 +312,7 @@ def compare_files(file_path1: str, file_path2: str, output_path: Optional[str] =
         output_path: Optional path to save the HTML report
         
     Returns:
-        TextComparison object containing similarity ratio, paragraph similarities, and HTML diff
+        TextComparison object containing similarity ratio and HTML diff
     """
     path1 = Path(file_path1)
     path2 = Path(file_path2)
@@ -315,11 +373,6 @@ def compare_documents(doc1_path: str, doc2_path: str = None, output_path: str = 
     print(f"Comparison completed:")
     print(f"  - Overall similarity: {comparison.similarity_ratio:.2%}")
     print(f"  - HTML report saved to: {output_path}")
-    
-    # Print paragraph-level similarities
-    print("\nParagraph-level similarities:")
-    for i, sim in enumerate(comparison.similarity_by_paragraph):
-        print(f"  - Paragraph {i+1}: {sim:.2%}")
     
     return comparison
 
